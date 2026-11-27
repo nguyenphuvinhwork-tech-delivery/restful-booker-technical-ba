@@ -1,0 +1,1305 @@
+
+openapi: 3.0.3
+
+info:
+  title: Restful Booker - TO-BE API
+  version: 1.0.0
+  description: Proposed hotel cancellation APIs.
+
+paths:
+  /api/cancellation-requests:
+    post:
+      tags:
+        - Cancellation Management
+      summary: Submit a cancellation request
+      description: >
+        Creates a cancellation request with
+        Pending Approval status. The existing
+        reservation remains active until approval.
+      operationId: createCancellationRequest
+      x-acceptance-criteria:
+        - AC-801
+        - AC-802
+        - AC-803
+        - AC-804
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reservationId
+              properties:
+                reservationId:
+                  type: integer
+                  example: 123
+                reason:
+                  type: string
+                  example: Travel plans changed
+
+      responses:
+        '201':
+          description: Cancellation request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cancellationRequestId:
+                    type: integer
+                    example: 501
+                  reservationId:
+                    type: integer
+                    example: 123
+                  status:
+                    type: string
+                    enum:
+                      - Pending Approval
+                    example: Pending Approval
+
+        '400':
+          description: Invalid request data
+
+        '401':
+          description: Authentication required
+
+        '403':
+          description: Reservation ownership denied
+
+        '409':
+          description: Duplicate cancellation request
+
+# API DESIGN 3 — validating a cancellation request
+  /api/cancellation-requests/{requestId}/decision:
+    patch:
+      tags:
+        - Cancellation Management
+      summary: Approve or reject cancellation
+      operationId: decideCancellation
+      description: >
+        Allows authorised hotel staff with
+        cancellation decision permission to
+        approve or reject pending requests.
+        The system must verify permissions
+        and record an auditable decision.
+
+      x-required-permissions:
+        - cancellation:decide
+
+      x-acceptance-criteria:
+        - AC-805
+        - AC-806
+        - AC-807
+        - AC-808
+        - AC-1005
+        - AC-1006
+        - AC-1008
+
+      x-test-cases:
+        - TC-040
+        - TC-041
+        - TC-042
+        - TC-043
+        - TC-073
+        - TC-074
+        - TC-076
+
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 501
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - decision
+              properties:
+                decision:
+                  type: string
+                  enum:
+                    - APPROVE
+                    - REJECT
+                reason:
+                  type: string
+                  description: Required for rejection.
+            example:
+              decision: APPROVE
+
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cancellationRequestId:
+                    type: integer
+                    example: 501
+                  status:
+                    type: string
+                    enum:
+                      - Approved
+                      - Rejected
+                    example: Approved
+
+        '400':
+          description: Invalid decision or missing reason
+        '401':
+          description: Authentication required
+        '403':
+          description: Staff permission denied
+        '404':
+          description: Cancellation request not found
+        '409':
+          description: Request already processed
+
+
+  /api/refunds/{refundId}:
+    get:
+      tags:
+        - Refund Management
+      summary: Retrieve refund status
+      operationId: getRefundStatus
+      description: >
+        Returns the current refund processing
+        status for an authorised customer or
+        hotel staff member.
+      x-acceptance-criteria:
+        - AC-812
+        - AC-814
+        - AC-915
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: refundId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 701
+
+      responses:
+        '200':
+          description: Refund information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refundId:
+                    type: integer
+                    example: 701
+                  cancellationRequestId:
+                    type: integer
+                    example: 501
+                  amount:
+                    type: number
+                    example: 200.00
+                  status:
+                    type: string
+                    enum:
+                      - Pending
+                      - Successful
+                      - Failed
+                    example: Pending
+
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Refund record not found
+
+  # API DESIGN 4 — CHECK ROOM AVAILABILITY
+  /api/availability:
+    get:
+      tags:
+        - Reservation Modification
+      summary: Check room availability
+      operationId: checkRoomAvailability
+      description: >
+        Checks availability for requested dates.
+        May exclude the customer's existing reservation
+        when calculating booking conflicts.
+        Returns suitable alternative dates where available.
+      x-acceptance-criteria:
+        - AC-901
+        - AC-902
+        - AC-903
+        - AC-905
+      x-test-cases:
+        - TC-052
+        - TC-053
+        - TC-054
+        - TC-056
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: checkIn
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2027-01-15"
+        - name: checkOut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2027-01-18"
+        - name: roomId
+          in: query
+          required: false
+          schema:
+            type: integer
+          example: 101
+        - name: excludeReservationId
+          in: query
+          required: false
+          description: >
+            Existing reservation excluded from conflict
+            checks after ownership verification.
+          schema:
+            type: integer
+          example: 123
+      responses:
+        '200':
+          description: Availability search completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  availableRooms:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        roomId:
+                          type: integer
+                        roomType:
+                          type: string
+                        nightlyPrice:
+                          type: number
+                  alternativeDates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        checkIn:
+                          type: string
+                          format: date
+                        checkOut:
+                          type: string
+                          format: date
+              example:
+                availableRooms:
+                  - roomId: 102
+                    roomType: Double
+                    nightlyPrice: 150
+                alternativeDates:
+                  - checkIn: "2027-01-16"
+                    checkOut: "2027-01-19"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # API DESIGN 5 — CALCULATE MODIFICATION QUOTE
+  /api/reservation-modifications/quote:
+    post:
+      tags:
+        - Reservation Modification
+      summary: Calculate revised reservation price
+      operationId: quoteReservationModification
+      description: >
+        Evaluates proposed changes and calculates
+        their financial impact without changing
+        the existing reservation. At least one room
+        or date change must be supplied. Date changes
+        must include both check-in and check-out dates.
+        No modification penalty is charged.
+      x-acceptance-criteria:
+        - AC-904
+        - AC-906
+        - AC-907
+        - AC-908
+        - AC-909
+        - AC-910
+        - AC-911
+      x-test-cases:
+        - TC-055
+        - TC-057
+        - TC-058
+        - TC-059
+        - TC-060
+        - TC-061
+        - TC-062
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reservationId
+              properties:
+                reservationId:
+                  type: integer
+                newRoomId:
+                  type: integer
+                newCheckIn:
+                  type: string
+                  format: date
+                newCheckOut:
+                  type: string
+                  format: date
+            example:
+              reservationId: 123
+              newRoomId: 102
+              newCheckIn: "2027-01-15"
+              newCheckOut: "2027-01-18"
+      responses:
+        '200':
+          description: Modification quotation calculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quoteId:
+                    type: string
+                  reservationId:
+                    type: integer
+                  originalTotal:
+                    type: number
+                  revisedTotal:
+                    type: number
+                  priceDifference:
+                    type: number
+                    description: >
+                      Revised total minus original total.
+                      A negative value indicates a refund.
+                  modificationFee:
+                    type: number
+                  currency:
+                    type: string
+                  adjustmentType:
+                    type: string
+                    enum:
+                      - AdditionalPayment
+                      - Refund
+                      - None
+              example:
+                quoteId: "Q-901"
+                reservationId: 123
+                originalTotal: 300
+                revisedTotal: 450
+                priceDifference: 150
+                modificationFee: 0
+                currency: USD
+                adjustmentType: AdditionalPayment
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # API DESIGN 6 — CONFIRM RESERVATION MODIFICATION
+  /api/reservation-modifications/confirm:
+    post:
+      tags:
+        - Reservation Modification
+      summary: Confirm reservation modification
+      operationId: confirmReservationModification
+      description: >
+        Confirms a valid quotation after rechecking
+        availability and ownership. Higher-priced
+        modifications require successful payment.
+        Cheaper modifications initiate an eligible
+        refund after the reservation is updated.
+        Failed payments preserve the original booking.
+      x-acceptance-criteria:
+        - AC-912
+        - AC-913
+        - AC-914
+        - AC-916
+        - AC-917
+      x-test-cases:
+        - TC-063
+        - TC-064
+        - TC-065
+        - TC-067
+        - TC-068
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: >
+            Unique identifier preventing accidental
+            duplicate modification/payment processing.
+          schema:
+            type: string
+          example: "modify-123-attempt-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quoteId
+              properties:
+                quoteId:
+                  type: string
+                paymentReference:
+                  type: string
+                  description: >
+                    Gateway payment reference for an
+                    additional payment, where required.
+                    Never submit raw card details.
+            example:
+              quoteId: "Q-901"
+              paymentReference: "pay_example_001"
+      responses:
+        '200':
+          description: Reservation modification confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modificationId:
+                    type: integer
+                  reservationId:
+                    type: integer
+                  status:
+                    type: string
+                    enum:
+                      - Confirmed
+                  paymentStatus:
+                    type: string
+                    enum:
+                      - Successful
+                      - NotRequired
+                  refundStatus:
+                    type: string
+                    enum:
+                      - Pending
+                      - Successful
+                      - Failed
+                      - NotRequired
+              example:
+                modificationId: 601
+                reservationId: 123
+                status: Confirmed
+                paymentStatus: Successful
+                refundStatus: NotRequired
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # API DESIGN 7 — RETRIEVE MODIFICATION STATUS
+  /api/reservation-modifications/{modificationId}:
+    get:
+      tags:
+        - Reservation Modification
+      summary: Retrieve modification and payment status
+      operationId: getReservationModificationStatus
+      description: >
+        Retrieves the outcome of an attempted
+        reservation modification, including its
+        additional payment or refund processing
+        status. Access is limited to authorised users.
+      x-acceptance-criteria:
+        - AC-915
+        - AC-917
+      x-test-cases:
+        - TC-066
+        - TC-068
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: modificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 601
+      responses:
+        '200':
+          description: Modification status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modificationId:
+                    type: integer
+                  reservationId:
+                    type: integer
+                  status:
+                    type: string
+                    enum:
+                      - Confirmed
+                      - PendingPayment
+                      - Failed
+                  adjustmentType:
+                    type: string
+                    enum:
+                      - AdditionalPayment
+                      - Refund
+                      - None
+                  adjustmentAmount:
+                    type: number
+                  paymentStatus:
+                    type: string
+                    enum:
+                      - Pending
+                      - Successful
+                      - Failed
+                      - NotRequired
+                  refundStatus:
+                    type: string
+                    enum:
+                      - Pending
+                      - Successful
+                      - Failed
+                      - NotRequired
+              example:
+                modificationId: 601
+                reservationId: 123
+                status: Confirmed
+                adjustmentType: Refund
+                adjustmentAmount: 50
+                paymentStatus: NotRequired
+                refundStatus: Pending
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+
+  # API DESIGN 8 — USER AUTHENTICATION
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication and Authorisation
+      summary: Authenticate customer or staff
+      operationId: authenticateUser
+      description: >
+        Verifies user credentials and issues an
+        access token containing the authenticated
+        user's identity and role information.
+        Invalid credentials must be rejected.
+
+      x-acceptance-criteria:
+        - AC-1001
+        - AC-1003
+      x-test-cases:
+        - TC-069
+        - TC-071
+
+      security: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+            example:
+              username: customer_demo
+              password: example-password
+
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  tokenType:
+                    type: string
+                  expiresIn:
+                    type: integer
+                    description: Token lifetime in seconds
+                  role:
+                    type: string
+                    enum:
+                      - Customer
+                      - Staff
+                      - Administrator
+              example:
+                accessToken: example-token-not-valid
+                tokenType: Bearer
+                expiresIn: 3600
+                role: Customer
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # API DESIGN 9 — SECURE USER LOGOUT
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication and Authorisation
+      summary: Logout and invalidate token
+      operationId: logoutUser
+      description: >
+        Invalidates the authentication token
+        supplied by the user. After successful
+        logout, the token must no longer grant
+        access to protected API operations.
+
+      x-acceptance-criteria:
+        - AC-1009
+        - AC-1010
+        - AC-1011
+      x-test-cases:
+        - TC-077
+        - TC-078
+        - TC-079
+
+      security:
+        - bearerAuth: []
+
+      responses:
+        '204':
+          description: >
+            Logout successful.
+            Authentication token invalidated.
+
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                error:
+                  code: INVALID_TOKEN
+                  message: Authentication token is invalid.
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # API DESIGN 10 — SECURE BOOKING RETRIEVAL
+  /api/booking/{bookingId}:
+    get:
+      tags:
+        - Authentication and Authorisation
+      summary: Retrieve an authorised reservation
+      operationId: getSecureBooking
+      description: >
+        Retrieves an existing reservation only if
+        the authenticated customer owns it, or the
+        user is authorised hotel staff.
+        Reservation ownership must be verified
+        by the server before returning data.
+
+      x-acceptance-criteria:
+        - AC-1001
+        - AC-1002
+        - AC-1003
+        - AC-1004
+        - AC-1103
+        - AC-1105
+
+      x-test-cases:
+        - TC-069
+        - TC-070
+        - TC-071
+        - TC-072
+        - TC-082
+        - TC-084
+
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 123
+            minimum: 1
+
+      responses:
+        '200':
+          description: Authorised reservation retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookingId:
+                    type: integer
+                  roomId:
+                    type: integer
+                  checkIn:
+                    type: string
+                    format: date
+                  checkOut:
+                    type: string
+                    format: date
+                  status:
+                    type: string
+              example:
+                bookingId: 123
+                roomId: 102
+                checkIn: "2027-01-15"
+                checkOut: "2027-01-18"
+                status: Confirmed
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+        
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+
+  # API DESIGN 11 — STAFF CANCELLATION REVIEW
+  /api/cancellation-requests/{requestId}:
+    get:
+      tags:
+        - Authentication and Authorisation
+      summary: Review cancellation request securely
+      operationId: getCancellationRequestDetails
+      description: >
+        Allows authorised hotel staff to retrieve
+        cancellation details for review.
+        Staff must have cancellation review
+        permission. Sensitive payment information
+        must be masked.
+
+      x-required-permissions:
+        - cancellation:review
+
+      x-acceptance-criteria:
+        - AC-805
+        - AC-1006
+        - AC-1007
+
+      x-test-cases:
+        - TC-040
+        - TC-074
+        - TC-075
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 501
+
+      responses:
+        '200':
+          description: Cancellation details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cancellationRequestId:
+                    type: integer
+                  reservationId:
+                    type: integer
+                  customerName:
+                    type: string
+                  status:
+                    type: string
+                  refundEligibility:
+                    type: string
+                  paymentReferenceMasked:
+                    type: string
+              example:
+                cancellationRequestId: 501
+                reservationId: 123
+                customerName: Example Customer
+                status: Pending Approval
+                refundEligibility: Pending Review
+                paymentReferenceMasked: "pay_****4521"
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+
+  # API DESIGN 12 — RELIABLE ROOM RETRIEVAL
+  /api/room/{roomId}:
+    get:
+      tags:
+        - API Reliability
+      summary: Retrieve room information reliably
+      operationId: retrieveRoomReliably
+      description: >
+        Retrieves an existing room by its ID.
+        The API must return the correct room details
+        for valid IDs and meaningful error responses
+        for invalid or non-existent room IDs.
+
+      x-acceptance-criteria:
+        - AC-1101
+        - AC-1105
+
+      x-test-cases:
+        - TC-080
+        - TC-084
+
+      security: []
+
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: Unique identifier of the room
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+
+      responses:
+        '200':
+          description: Room successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roomid:
+                    type: integer
+                  roomName:
+                    type: string
+                  type:
+                    type: string
+                  roomPrice:
+                    type: number
+                  accessible:
+                    type: boolean
+                  features:
+                    type: array
+                    items:
+                      type: string
+              example:
+                roomid: 1
+                roomName: "101"
+                type: Single
+                roomPrice: 100
+                accessible: true
+                features:
+                  - TV
+                  - WiFi
+                  - Safe
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '404':
+          description: Room does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                error:
+                  code: ROOM_NOT_FOUND
+                  message: The requested room does not exist.
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # API DESIGN 13 — ROOM API HEALTH MONITORING
+  /api/room/actuator/health:
+    get:
+      tags:
+        - API Reliability
+      summary: Check Room API health
+      operationId: checkRoomApiHealth
+      description: >
+        Reports the operational health of the
+        Room API service for monitoring purposes.
+        The endpoint must distinguish healthy
+        service conditions from unavailable services.
+
+      x-acceptance-criteria:
+        - AC-1114
+
+      x-test-cases:
+        - TC-093
+
+      responses:
+        '200':
+          description: Room API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - UP
+              example:
+                status: UP
+
+        '503':
+          description: Room API is unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - DOWN
+              example:
+                status: DOWN
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # API DESIGN 14 — RELIABLE MESSAGE RETRIEVAL
+  /api/message/{messageId}:
+    get:
+      tags:
+        - API Reliability
+      summary: Retrieve a customer message reliably
+      operationId: retrieveMessageReliably
+      description: >
+        Retrieves an existing customer message.
+        Valid message IDs must return the corresponding
+        record. Invalid and missing IDs must produce
+        appropriate client-error responses.
+
+      x-acceptance-criteria:
+        - AC-1102
+        - AC-1105
+
+      x-test-cases:
+        - TC-081
+        - TC-084
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          description: Unique message identifier
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+
+      responses:
+        '200':
+          description: Message successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messageId:
+                    type: integer
+                  message:
+                    type: string
+                  read:
+                    type: boolean
+              example:
+                messageId: 1
+                message: Please confirm my arrival time.
+                read: false
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '404':
+          description: Message does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                error:
+                  code: MESSAGE_NOT_FOUND
+                  message: The requested message does not exist.
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+
+  # API DESIGN 15 — RELIABLE ROOM REPORT RETRIEVAL
+  /api/report/room/{roomId}:
+    get:
+      tags:
+        - API Reliability
+      summary: Retrieve an individual room report reliably
+      operationId: retrieveRoomReportReliably
+      description: >
+        Retrieves a room availability report
+        for an existing room. The API must
+        distinguish valid reports, invalid
+        requests and unavailable resources.
+
+      x-acceptance-criteria:
+        - AC-1104
+        - AC-1105
+
+      x-test-cases:
+        - TC-083
+        - TC-084
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: Unique room identifier
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+
+      responses:
+        '200':
+          description: Room report retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roomId:
+                    type: integer
+                  availability:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        available:
+                          type: boolean
+              example:
+                roomId: 1
+                availability:
+                  - date: "2027-01-15"
+                    available: true
+                  - date: "2027-01-16"
+                    available: false
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '404':
+          description: Room report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                error:
+                  code: ROOM_REPORT_NOT_FOUND
+                  message: No report found for the specified room.
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+
+  schemas:
+    ApiError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request or validation failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: INVALID_REQUEST
+              message: The submitted information is invalid.
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: AUTHENTICATION_REQUIRED
+              message: A valid authentication token is required.
+
+    Forbidden:
+      description: User is not authorised
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: ACCESS_DENIED
+              message: You cannot modify this reservation.
+
+    NotFound:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: The requested resource was not found.
+
+    Conflict:
+      description: Reservation modification conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: MODIFICATION_CONFLICT
+              message: >
+                The modification cannot be confirmed.
+                Check availability, quotation and payment.
+
+    ServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: An unexpected error occurred.
+
