@@ -1,0 +1,8 @@
+# ID|METHOD|PATH|EXPECTED_STATUS|BODY_FILE|JSON_FIELD|EXPECTED_VALUE
+TC-001|GET|/room/|200|-|-|-
+TC-002|GET|/room/1|200|-|roomid|1
+TC-NEG-001|GET|/room/999999|404|-|-|-
+
+To test it locally, run this from a local copy of your GitHub repository's root directory:
+BASE_URL="https://automationintesting.online/api" \
+bash common-script-api-report.sh
