@@ -82,19 +82,19 @@ Activities included:
 This repository contains the technical specifications, testing scripts, process models, and business analysis documentation developed throughout the RESTful Booker Technical BA project.
 | File | Description |
 |---|---|
-| [README.md](README.md) | Project overview, methodology, scope, tools, and key learning outcomes. |
-| [as-is-postman-collection.json](as-is-postman-collection.json) | Postman collection used to investigate and test existing AS-IS API functionality. |
-| [to-be-postman-collection.json](to-be-postman-collection.json) | Postman collection containing proposed TO-BE API requests, response examples, and mock testing scenarios. |
-| [to-be-openapi.yaml](to-be-openapi.yaml) | OpenAPI 3.0.3 specification documenting 15 proposed API designs, including revised and enhanced operations. |
-| [automating-api-test.sh](automating-api-test.sh) | Bash script for automated API testing and validation of HTTP responses. |
-| [common-script-api-report.sh](common-script-api-report.sh) | Reusable Bash API test runner supporting configurable endpoints, HTTP methods, authentication, JSON checks, and CSV reporting. |
-| [gap-analysis.pdf](gap-analysis.pdf) | Documentation of the four identified business and technical gaps, including proposed improvements. |
-| [to-be-api-design & documentation.pdf](to-be-api-design%20%26%20documentation.pdf) | Detailed TO-BE API design documentation, covering endpoints, HTTP methods, request and response structures, and related requirements. |
-| [context-diagram.png](context-diagram.png) | High-level system context showing interactions between the Room Booking System and external entities. |
-| [bpmn-level 1-diagram.png](bpmn-level%201-diagram.png) | High-level BPMN process model representing the major business activities. |
-| [bpmn-level 2-diagram-request-for-cancellation.png](bpmn-level%202-diagram-request-for-cancellation.png) | Detailed BPMN model of the proposed reservation cancellation workflow. |
-| [bpmn-level 2-digram-modifying-reservation-details.png](bpmn-level%202-digram-modifying-reservation-details.png) | Detailed BPMN model of the proposed reservation modification workflow. |
-| [user-stories-map.png](user-stories-map.png) | TO-BE user story map illustrating the relationships between business activities and user requirements. |
+| [README.md] | Project overview, methodology, scope, tools, and key learning outcomes. |
+| [as-is-postman-collection.json] | Postman collection used to investigate and test existing AS-IS API functionality. |
+| [to-be-postman-collection.json] | Postman collection containing proposed TO-BE API requests, response examples, and mock testing scenarios. |
+| [to-be-openapi.yaml] | OpenAPI 3.0.3 specification documenting 15 proposed API designs, including revised and enhanced operations. |
+| [automating-api-test.sh] | Bash script for automated API testing and validation of HTTP responses. |
+| [common-script-api-report.sh] | Reusable Bash API test runner supporting configurable endpoints, HTTP methods, authentication, JSON checks, and CSV reporting. |
+| [gap-analysis.pdf] | Documentation of the four identified business and technical gaps, including proposed improvements. |
+| [to-be-api-design & documentation.pdf] | Detailed TO-BE API design documentation, covering endpoints, HTTP methods, request and response structures, and related requirements. |
+| [context-diagram.png] | High-level system context showing interactions between the Room Booking System and external entities. |
+| [bpmn-level 1-diagram.png] | High-level BPMN process model representing the major business activities. |
+| [bpmn-level 2-diagram-request-for-cancellation.png] | Detailed BPMN model of the proposed reservation cancellation workflow. |
+| [bpmn-level 2-digram-modifying-reservation-details.png] | Detailed BPMN model of the proposed reservation modification workflow. |
+| [user-stories-map.png] | TO-BE user story map illustrating the relationships between business activities and user requirements. |
 
 ### How to Explore the Repository
 Readers interested in **Business Analysis** can begin with the Gap Analysis, Context Diagram, BPMN models, and User Story Map.
