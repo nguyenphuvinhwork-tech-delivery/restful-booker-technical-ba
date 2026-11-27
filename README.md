@@ -79,23 +79,36 @@ Activities included:
 | Spring Boot (source inspection) | Understanding existing backend endpoint definitions |
 
 ## Repository Contents
+This repository contains the technical specifications, testing scripts, process models, and business analysis documentation developed throughout the RESTful Booker Technical BA project.
 | File | Description |
 |---|---|
-| `README.md` | Project overview, methodology, and technical approach |
-| `to-be-postman-collection.json` | Exported Postman collection containing proposed TO-BE API requests and response examples |
+| [README.md](README.md) | Project overview, methodology, scope, tools, and key learning outcomes. |
+| [as-is-postman-collection.json](as-is-postman-collection.json) | Postman collection used to investigate and test existing AS-IS API functionality. |
+| [to-be-postman-collection.json](to-be-postman-collection.json) | Postman collection containing proposed TO-BE API requests, response examples, and mock testing scenarios. |
+| [to-be-openapi.yaml](to-be-openapi.yaml) | OpenAPI 3.0.3 specification documenting 15 proposed API designs, including revised and enhanced operations. |
+| [automating-api-test.sh](automating-api-test.sh) | Bash script for automated API testing and validation of HTTP responses. |
+| [common-script-api-report.sh](common-script-api-report.sh) | Reusable Bash API test runner supporting configurable endpoints, HTTP methods, authentication, JSON checks, and CSV reporting. |
+| [gap-analysis.pdf](gap-analysis.pdf) | Documentation of the four identified business and technical gaps, including proposed improvements. |
+| [to-be-api-design & documentation.pdf](to-be-api-design%20%26%20documentation.pdf) | Detailed TO-BE API design documentation, covering endpoints, HTTP methods, request and response structures, and related requirements. |
+| [context-diagram.png](context-diagram.png) | High-level system context showing interactions between the Room Booking System and external entities. |
+| [bpmn-level 1-diagram.png](bpmn-level%201-diagram.png) | High-level BPMN process model representing the major business activities. |
+| [bpmn-level 2-diagram-request-for-cancellation.png](bpmn-level%202-diagram-request-for-cancellation.png) | Detailed BPMN model of the proposed reservation cancellation workflow. |
+| [bpmn-level 2-digram-modifying-reservation-details.png](bpmn-level%202-digram-modifying-reservation-details.png) | Detailed BPMN model of the proposed reservation modification workflow. |
+| [user-stories-map.png](user-stories-map.png) | TO-BE user story map illustrating the relationships between business activities and user requirements. |
 
-Additional API specifications, diagrams, testing scripts, and documentation may be added as the portfolio is organised.
+### How to Explore the Repository
+Readers interested in **Business Analysis** can begin with the Gap Analysis, Context Diagram, BPMN models, and User Story Map.
+Readers interested in **API Design** can examine the OpenAPI specification and the TO-BE Postman collection.
+Readers interested in **API Testing and Automation** can explore the AS-IS Postman collection and Bash testing scripts.
+Together, these deliverables demonstrate the process of translating identified business problems into structured requirements, proposed API contracts, and testable technical specifications.
 
 ## How to Explore the Postman Collection
-
-1. Download `to-be-postman-collection.json` from this repository.
+1. Download `to-be-postman-collection.json` or `as-is-postman-collection.json` from this repository.
 2. Open Postman and select **Import**.
 3. Import the JSON collection.
 4. Explore the API endpoints, request bodies, authentication specifications, and saved response examples.
 5. To simulate the TO-BE APIs, create a collection-based Postman Mock Server and configure the `baseUrl` environment variable with its URL.
-
 Some saved responses can be selected through the `x-mock-response-code` request header.
-
 A mock server must be configured separately; it is not hosted or deployed by importing the collection alone.
 
 ## Project Scope & Limitations
@@ -109,14 +122,15 @@ The deliverables are intended to demonstrate a structured Technical BA approach 
 
 ## Key Learning Outcomes
 Through this project, I strengthened my understanding of:
-- Translating business problems into technical requirements.
+- Translating business problems into technical requirements in general, and API specificly.
 - Analysing existing systems and identifying functional gaps.
 - Designing API contracts aligned with business rules and acceptance criteria.
 - Applying requirements traceability throughout solution design.
 - Investigating API behaviour through both graphical tools and command-line utilities.
 - Distinguishing proposed API behaviour from implemented and verified functionality.
+- Applying modern API features to assist RESTful Booker in adopting a modern API system.
 **The main takeaway:** Technical Business Analysis requires connecting business objectives, system behaviour, technical constraints, and testable requirements to create implementable solutions.
 
 ---
 
-*This project independently analyses the publicly available RESTful Booker Platform. The underlying application and its original source code belong to their respective creators. The proposed business analysis artefacts and TO-BE API contract designs represent independent case-study work.*
+**This project independently analyses the publicly available RESTful Booker Platform. The underlying application and its original source code belong to their respective creators. The proposed business analysis artefacts and TO-BE API contract designs represent independent case-study work.**
